@@ -1,0 +1,64 @@
+name: Update FE Container Image in EKS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-container:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Configure AWS Credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+
+      # Builds New Docker Image
+      - name: Build Docker Image
+        run: | 
+          docker build -t nextjs-docker .
+          docker tag nextjs-docker:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+
+      # Pushes new Docker Image to ECR Repository
+      - name: Push Docker image to ECR
+        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+
+      # Update Kubeconfig (Needed for kubectl commands)
+      - name: Update kubeconfig (needed for kubectl commands)
+        run: aws eks update-kubeconfig --name qa-eks-cluster --region us-east-1
+
+      # Run Namespace Manifest
+      - name: Apply Namespace Manifest
+        run: kubectl apply -f manifests/namespace.yaml
+
+      # Run Network Policy Manifest
+      - name: Apply Network Manifest
+        run: kubectl apply -f manifests/networkpolicy.yaml
+
+      # Run Deployment Manifest
+      - name: Apply Deployment Manifest
+        run: kubectl apply -f manifests/deployment.yaml
+
+      # Run Service Manifest
+      - name: Apply Service Manifest
+        run: kubectl apply -f manifests/service.yaml
+
+      # Run HPA Manifest
+      - name: Apply HPA Manifest
+        run: kubectl apply -f manifests/hpa.yaml
+
+      # Run Ingress Manifest
+      - name: Apply Ingress Manifest
+        run: kubectl apply -f manifests/ingress.yaml
