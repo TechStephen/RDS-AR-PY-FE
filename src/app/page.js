@@ -18,7 +18,7 @@ export default function Home() {
       <br/>
       <div className='flex flex-row justify-center items-center gap-6 pt-12'>
         <h1>RDS AppRunner API Gateway Lambda Test</h1>
-        <button onClick={() => getItems()} className='border border-[1px] border-black border-solid p-2'>Activate Microservice</button>
+        <button onClick={() => getItems()} className='border border-[1px] border-black border-solid p-2'>Activate Lambda</button>
       </div>
     </div>
   );
