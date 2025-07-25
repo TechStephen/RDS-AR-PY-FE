@@ -5,7 +5,7 @@ export default function Home() {
   const [msItem, setMsItem] = useState(null);
 
   const getItems = async () => {
-    const items = await fetch('/api/getItems')
+    const items = await fetch('https://efpr31v2rk.execute-api.us-east-1.amazonaws.com/prod/get-items')
     const item = await items.json();
     if (item && item.item) {
       setMsItem(item.item);
